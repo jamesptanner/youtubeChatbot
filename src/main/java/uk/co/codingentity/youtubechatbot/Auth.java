@@ -6,7 +6,6 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -17,9 +16,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 public class Auth {
-    final static NetHttpTransport NET_TRANSPORT = new NetHttpTransport();
-    final static JsonFactory JSON_FACTORY = new JacksonFactory();
-    final static Collection<String> SCOPES = Arrays.asList(YouTubeScopes.YOUTUBE_READONLY);
+    private final static JsonFactory JSON_FACTORY = new JacksonFactory();
+    private final static Collection<String> SCOPES = Arrays.asList(YouTubeScopes.YOUTUBE_READONLY);
     /**
      * Directory to store user credentials for this application.
      */
@@ -41,9 +39,7 @@ public class Auth {
         }
     }
 
-    public static Credential authorize() throws IOException {
-        // Load client secrets.
-
+    public static Credential authorise() throws IOException {
 
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow =
@@ -52,8 +48,6 @@ public class Auth {
                         .setDataStoreFactory(DATA_STORE_FACTORY)
                         .setAccessType("offline")
                         .build();
-        Credential credential = new AuthorizationCodeInstalledApp(
-                flow, new LocalServerReceiver()).authorize("user");
-        return credential;
+        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
 }
