@@ -13,10 +13,8 @@ public class Application {
 
     static private YouTube yt;
 
-
-    private final static String username = "Many a True Nerd";
-
     public static void main(String[] args) {
+
         Credential userCredentials = null;
         try {
             userCredentials = Auth.authorise();
@@ -27,18 +25,44 @@ public class Application {
         yt = new YouTube.Builder(userCredentials.getTransport(), userCredentials.getJsonFactory(), userCredentials)
                 .setApplicationName("youtube-chatbot-dev")
                 .build();
-
-        SearchResult chosenResult;
+        System.out.println("Enter username to search for.");
+        SearchResult chosenResult = null;
         try {
-            chosenResult = getChannel();
+            chosenResult = getChannel(new Scanner(System.in).next());
         } catch (IOException e) {
-            System.err.println(String.format("failed to search for channel channel. reason:%s", e.getLocalizedMessage()));
+            System.err.println(String.format("failed to search for channel . reason:%s", e.getLocalizedMessage()));
             System.exit(2);
         }
 
+
+        SearchResult nextStream = null;
+        try {
+            nextStream = findNextStream(chosenResult.getSnippet().getChannelId());
+        } catch (IOException e) {
+            System.err.println(String.format("failed to search for livestream. reason:%s", e.getLocalizedMessage()));
+            System.exit(3);
+        }
     }
 
-    private static SearchResult getChannel() throws IOException {
+    private static SearchResult findNextStream(String channelId) throws IOException {
+        YouTube.Search.List search = yt.search().list("id,snippet");
+        search.setChannelId(channelId);
+        search.setType("video");
+        search.setEventType("live");
+        SearchListResponse liveStreams = search.execute();
+        if (liveStreams.getItems().size() == 0) {
+            search.setEventType("upcoming");
+            search.setOrder("date");
+            liveStreams = search.execute();
+        }
+
+        if (liveStreams.getItems().size() != 0) {
+            return liveStreams.getItems().get(0);
+        }
+        return null;
+    }
+
+    private static SearchResult getChannel(String username) throws IOException {
         YouTube.Search.List search = yt.search().list("id,snippet");
         search.setType("channel");
         search.setQ(username);
