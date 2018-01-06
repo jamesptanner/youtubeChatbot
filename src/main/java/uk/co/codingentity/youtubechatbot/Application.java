@@ -4,6 +4,8 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
+import com.google.api.services.youtube.model.Video;
+import com.google.api.services.youtube.model.VideoListResponse;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,6 +44,34 @@ public class Application {
             System.err.println(String.format("failed to search for livestream. reason:%s", e.getLocalizedMessage()));
             System.exit(3);
         }
+
+        String livestreamId = nextStream.getId().getVideoId();  //so we can make the calls based on the live stream.
+        String livestreamTitle = nextStream.getSnippet().getTitle(); //just nice to have around.
+        String livestreamState = nextStream.getSnippet().getLiveBroadcastContent(); //so we know if we are live or not.
+
+        try {
+            ChatStream cs = new ChatStream(yt, getLiveChatId(livestreamId));
+            cs.startReadingChat();
+            cs.waitForCompletion();
+        } catch (IOException e) {
+        }
+    }
+
+    static String getLiveChatId(String videoId) throws IOException {
+        // Get liveChatId from the video
+        YouTube.Videos.List videoList = yt.videos()
+                .list("liveStreamingDetails")
+                .setFields("items/liveStreamingDetails/activeLiveChatId")
+                .setId(videoId);
+        VideoListResponse response = videoList.execute();
+        for (Video v : response.getItems()) {
+            String liveChatId = v.getLiveStreamingDetails().getActiveLiveChatId();
+            if (liveChatId != null && !liveChatId.isEmpty()) {
+                return liveChatId;
+            }
+        }
+
+        return null;
     }
 
     private static SearchResult findNextStream(String channelId) throws IOException {
@@ -55,7 +85,6 @@ public class Application {
             search.setOrder("date");
             liveStreams = search.execute();
         }
-
         if (liveStreams.getItems().size() != 0) {
             return liveStreams.getItems().get(0);
         }
@@ -73,7 +102,7 @@ public class Application {
             System.out.println("No match for channel search found.");
         } else if (results.size() == 1) {
             System.out.println("Found match for channel search");
-            chosenResult = results.get(1);
+            chosenResult = results.get(0);
         } else {
             do {
                 //not 0 not 1 therefore must be more than one result so we must get the user to choose.

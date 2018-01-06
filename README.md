@@ -9,6 +9,7 @@ In the end I hope that this can function as a bot inside a youtube livestream ch
 + poll option
 + uptime
 + auto responses
++ top superchatter.
 + Eventually add a UI to it so it looks better than just a cli stream of never ending logging.
 + anything else I can think of outside of the last 20 seconds.
 
